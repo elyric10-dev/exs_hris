@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,24 +14,24 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_role_id')->nullable();
             $table->unsignedBigInteger('manager_id')->nullable();
-            $table->unsignedBigInteger('department_id')->nullable();
+            // $table->unsignedBigInteger('department_id')->nullable();
             $table->unsignedBigInteger('created_by_user_id')->nullable();
             $table->string('username')->unique();
             $table->string('password');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('first_name');
-            $table->string('middle_name')->nullable();
-            $table->string('last_name');
-            $table->string('contact_no')->nullable();
-            $table->text('address')->nullable();
-            $table->date('date_of_birth')->nullable();
-            $table->date('hire_date')->nullable();
-            $table->string('position')->nullable();
-            $table->decimal('salary', 10, 2)->nullable();
-            $table->enum('employment_status', ['active', 'inactive', 'terminated', 'resigned'])->default('active');
-            $table->date('termination_date')->nullable();
-            $table->date('resignation_date')->nullable();
+            // $table->string('first_name');
+            // $table->string('middle_name')->nullable();
+            // $table->string('last_name');
+            // $table->string('contact_no')->nullable();
+            // $table->text('address')->nullable();
+            // $table->date('date_of_birth')->nullable();
+            // $table->date('hire_date')->nullable();
+            // $table->string('position')->nullable();
+            // $table->decimal('salary', 10, 2)->nullable();
+            // $table->enum('employment_status', ['active', 'inactive', 'terminated', 'resigned'])->default('active');
+            // $table->date('termination_date')->nullable();
+            // $table->date('resignation_date')->nullable();
             $table->boolean('active')->default(true);
             $table->boolean('locked')->default(false);
             $table->boolean('disabled')->default(false);

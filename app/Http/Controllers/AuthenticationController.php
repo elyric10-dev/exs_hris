@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
+
+use Carbon\Carbon;
+use App\Models\User;
+use App\Models\PersonalInformation;
+use App\Models\RefreshToken;
+
 
 class AuthenticationController extends Controller
 {
@@ -14,7 +20,7 @@ class AuthenticationController extends Controller
     {
         $request->validate([
             'first_name' => 'required|string|max:255',
-            'middle_name' => 'string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'username' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -23,42 +29,153 @@ class AuthenticationController extends Controller
         ]);
 
         $user = User::create([
-            'first_name' => $request->first_name,
-            'middle_name' => $request->middle_name,
-            'last_name' => $request->last_name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'contact_no' => $request->contact_no,
-            'password' => Hash::make($request->password),
+            'user_role_id' => 1,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Generate access token
+        $accessToken = $user->createToken('access_token')->plainTextToken;
+
+        // Generate refresh token
+        $refreshToken = Str::random(60);
+
+        // Store token with an expiration date of 2 weeks
+        $user->refreshTokens()->create([
+            'token' => hash('sha256', $refreshToken),
+            'expires_at' => Carbon::now()->addWeeks(2),
+        ]);
+
+        $user->logs()->create([
+            'action' => 'register',
+            'details' => 'User registered successfully',
+        ]);
 
         return response()->json([
             'user' => $user,
-            'token' => $token,
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer'
         ], 201);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete(); // Revoke all tokens
+        $request->user()->refreshTokens()->delete(); // Delete all refresh tokens
+
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ]);
     }
 
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'user_account' => 'required|string|max:100',
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+
+
+        $logged_in = $this->attempt($request->user_account, $request->password);
+
+        if ($logged_in->is_logged_in) {
+            $user_id = $logged_in->data->id;
+
+            $user = User::find($user_id);
+
+            // Generate access token
+            $accessToken = $user->createToken('access_token')->plainTextToken;
+
+            // Generate refresh token
+            $refreshToken = Str::random(60);
+
+            // Store token with an expiration date of 2 weeks
+            $user->refreshTokens()->create([
+                'token' => hash('sha256', $refreshToken),
+                'expires_at' => Carbon::now()->addWeeks(2),
             ]);
+
+            return response()->json([
+                'data' => $logged_in,
+                'access_token' => $accessToken,
+                'refresh_token' => $refreshToken,
+                'token_type' => 'Bearer'
+            ], 201);
+        } else {
+            return $logged_in;
+        }
+    }
+
+    public function refresh(Request $request)
+    {
+        $request->validate([
+            'refresh_token' => 'required|string'
+        ]);
+
+        $hashedToken = hash('sha256', $request->refresh_token);
+        $refreshToken = RefreshToken::where('token', $hashedToken)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
+
+        if (!$refreshToken) {
+            return response()->json([
+                'error' => 'Invalid or expired refresh token'
+            ], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user = $refreshToken->user;
+
+        // Revoke the old refresh token
+        $refreshToken->delete();
+
+        // Generate new access and refresh tokens
+        $accessToken = $user->createToken('auth_token')->plainTextToken;
+        $newRefreshToken = Str::random(60);
+
+        // Store the new refresh token in the database
+        $user->refreshTokens()->create([
+            'token' => hash('sha256', $newRefreshToken),
+            'expires_at' => Carbon::now()->addWeeks(2),
+        ]);
 
         return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ], 200);
+            'access_token' => $accessToken,
+            'refresh_token' => $newRefreshToken,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+
+    public function attempt($user_account, $password)
+    {
+        $user = $this->findUser($user_account);
+
+        if (!$user)
+            return $this->jsonResponse(false);
+
+        return $this->jsonResponse(
+            Hash::check($password, $user->password),
+            $user
+        );
+    }
+
+    private function findUser($user_account)
+    {
+        return User::where('username', $user_account)
+            ->orWhere('email', $user_account)->first()
+            ?? PersonalInformation::where('contact_number', $user_account)->first()->user;
+    }
+
+    private function jsonResponse($is_logged_in, $data = null)
+    {
+
+        $response = ['is_logged_in' => $is_logged_in];
+        $response[$is_logged_in ? 'data' : 'message'] = $data;
+
+        if (!$is_logged_in)
+            $response['message'] = 'Invalid username or password';
+
+        return response()->json($response)->getData();
+
     }
 }

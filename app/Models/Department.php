@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Department extends Model
 {
@@ -13,13 +16,11 @@ class Department extends Model
         'manager_id',
         'name',
         'description',
-        // 'code',
-        'created_date',
-        'is_active',
     ];
 
     protected $casts = [
-        'created_date' => 'date',
+        'created_at' => 'date',
+        'updated_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 
@@ -31,5 +32,10 @@ class Department extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'department_id');
+    }
+     
+    public function logs(): MorphMany
+    {
+        return $this->morphMany(Log::class, 'loggable');
     }
 }

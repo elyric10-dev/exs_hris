@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departments', function (Blueprint $table) {
+        Schema::create('logs', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('manager_id');
-            $table->string('name');
-            $table->string('description')->nullable();
-            // $table->string('code')->unique();
-            $table->boolean('is_active')->default(true);
+            $table->text('action');
+            $table->text('details')->nullable();
+            $table->text('ip_address')->nullable();
+            $table->string('user_agent')->nullable();
+            $table->morphs('loggable'); // Polymorphic columns: loggable_id and loggable_type
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('departments');
+        Schema::dropIfExists('logs');
     }
 };

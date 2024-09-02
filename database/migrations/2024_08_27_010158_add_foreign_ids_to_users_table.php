@@ -15,8 +15,6 @@ return new class extends Migration
             $table->foreign('user_role_id')->references('id')->on('user_roles')->onDelete('cascade');
 
             $table->foreign('manager_id')->references('id')->on('users')->onDelete('set null');
-
-            $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
             
             $table->foreign('created_by_user_id')->references('id')->on('users')->onDelete('set null');
         });
@@ -30,7 +28,6 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
                 $table->dropForeign(['user_role_id']);
                 $table->dropForeign(['manager_id']);
-                $table->dropForeign(['department_id']);
                 $table->dropForeign(['created_by_user_id']);
         });
         

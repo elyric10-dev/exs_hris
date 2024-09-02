@@ -5,15 +5,19 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 use App\Models\UserRole;
 
 class User extends Authenticatable
 {
-    use  HasFactory, Notifiable, HasApiTokens;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -23,38 +27,40 @@ class User extends Authenticatable
     protected $fillable = [
         'user_role_id', //FK
         'manager_id', //FK
-        'department_id', //FK
+        // 'department_id', //FK
         'created_by_user_id', //FK
         'username',
-        'password',
         'email',
-        'first_name',
-        'middle_name',
-        'last_name',
-        'contact_no',
-        'address',
-        'date_of_birth',
-        'hire_date',
-        'position',
-        'salary',
-        'employment_status',
-        'termination_date',
-        'resignation_date',
+        'password',
+        // 'first_name',
+        // 'middle_name',
+        // 'last_name',
+        // 'contact_no',
+        // 'address',
+        // 'date_of_birth',
+        // 'hire_date',
+        // 'position',
+        // 'salary',
+        // 'employment_status',
+        // 'termination_date',
+        // 'resignation_date',
     ];
 
     protected $casts = [
-        'date_of_birth' => 'date',
-        'hire_date' => 'date',
+        'email_verified_at' => 'datetime',
+        // 'date_of_birth' => 'date',
+        // 'hire_date' => 'date',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'last_login_at' => 'datetime',
         'last_logout_at' => 'datetime',
+
         'active' => 'boolean',
         'locked' => 'boolean',
         'disabled' => 'boolean',
-        'termination_date' => 'date',
-        'resignation_date' => 'date',
-        'salary' => 'decimal:2',
+        // 'termination_date' => 'date',
+        // 'resignation_date' => 'date',
+        // 'salary' => 'decimal:2',
     ];
 
     /**
@@ -81,10 +87,25 @@ class User extends Authenticatable
     }
 
     // RELATIONSHIPS
-     public function userRole(): BelongsTo
-     {
-         return $this->belongsTo(UserRole::class, 'user_role_id');
-     }
+    public function refreshTokens(): HasMany
+    {
+        return $this->hasMany(RefreshToken::class);
+    }
+
+    public function userRole(): BelongsTo
+    {
+        return $this->belongsTo(UserRole::class, 'user_role_id');
+    }
+
+    public function personalInformation(): HasOneThrough
+    {
+        return $this->hasOneThrough(PersonalInformation::class, User::class, 'id', 'user_id');
+    }
+
+    public function logs(): MorphMany
+    {
+        return $this->morphMany(Log::class, 'loggable');
+    }
 
     // SCOPES
 

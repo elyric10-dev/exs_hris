@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Testing extends Model
 {
     use HasFactory;
+
+    
+     
+    public function logs(): MorphMany
+    {
+        return $this->morphMany(Log::class, 'loggable');
+    }
 }

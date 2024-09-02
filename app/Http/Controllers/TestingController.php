@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\UserResource;
+
+use App\Models\User;
 
 class TestingController extends Controller
 {
@@ -19,6 +21,13 @@ class TestingController extends Controller
         // $user->email = 'code@email.com';
         // $user->password = Hash::make('Default@123');
         // $user->save();
+
+        // CREATE LOG
+        // $users = User::findOrFail(1);
+        // $users->logs()->create([
+        //     'action' => 'logout',
+        //     'details' => 'User logged out',
+        // ]);
 
         // ---------------------------------- READ ----------------------------------
         // $users = User::all(); // get all users
@@ -42,6 +51,8 @@ class TestingController extends Controller
 
         // $users = User::unRemembered()->get(); // get scope data created in user model (RECOMMENDED)
 
+        // $personal_information = PersonalInformation::where('email', $user_account)->orWhere('contact_number', $user_account)->first();
+
         // ---------------------------------- UPDATE ----------------------------------
         // $users = User::find(1);
         // $users->contact_no = '639937027083';
@@ -64,7 +75,7 @@ class TestingController extends Controller
         // $users = User::paginate(4);
         // $paginate = UserResource::collection($users); //paginate with serialization (RECOMMENDED)
 
-        
+
 
 
         return response()->json(['output' => $users], 200);
