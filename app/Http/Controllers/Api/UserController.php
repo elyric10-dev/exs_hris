@@ -18,9 +18,17 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
+        $users = User::with('personalInformation')->get();
 
-        return $users;
+        $data = [
+            'users' => $users
+        ];
+
+        return response()->json([
+            'error' => 0,
+            'message' => 'User created successfully',
+            'data' => $data
+        ]);
     }
 
     /**
@@ -32,7 +40,6 @@ class UserController extends Controller
             // USER DATA
             'user_role_id' => 'required|max:2',
             'manager_id' => 'nullable|max:2',
-            // 'created_by_user_id' => 'required|max:2',
             'username' => 'required|string|max:255',
             'password' => 'required|string|min:8',
 
@@ -54,23 +61,29 @@ class UserController extends Controller
             'created_by_user_id' => $creator_id,
             'username' => $request->username,
             'password' => Hash::make($request->password),
+            'email' => $request->email,
         ]);
 
-        $personal_information = PersonalInformation::create([
+        PersonalInformation::create([
             'user_id' => $user->id,
             'first_name' => $request->first_name,
             'middle_name' => $request->middle_name,
             'last_name' => $request->last_name,
             'contact_number' => $request->contact_number,
             'address' => $request->address,
-            'email' => $request->email,
             'date_of_birth' => $request->date_of_birth,
         ]);
 
+        if ($user->personalInformation) {
+            $data = [
+                'users' => $user,
+            ];
+        }
+
         return response()->json([
+            'error' => 0,
             'message' => 'User created successfully',
-            'user' => $user,
-            'personal_information' => $personal_information,
+            'data' => $data
         ]);
     }
 
@@ -79,9 +92,25 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
 
-        return $user;
+        if ($user) {
+            if ($user->personalInformation) {
+                $data = [
+                    'users' => $user,
+                ];
+            }
+
+            return response()->json([
+                'error' => 0,
+                'message' => 'User created successfully',
+                'data' => $data
+            ]);
+        } else
+            return response()->json([
+                'error' => 1,
+                'message' => "Can't find User"
+            ]);
     }
 
     /**
@@ -89,11 +118,37 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
 
-        $user->update($request->all());
+        if ($user) {
+            $personal_information = $user->personalInformation;
 
-        return response()->json(['message' => 'User updated successfully']);
+            if ($personal_information) {
+                $user->update($request->all());
+                $personal_information->update($request->all());
+
+                return response()->json([
+                    'error' => 0,
+                    'message' => "User Personal Information Updated Successfully!",
+                    'data' => $user
+                ]);
+            } else {
+
+                return response()->json([
+                    'error' => 0,
+                    'message' => "User Updated Successfully!",
+                    'data' => $user
+                ]);
+            }
+        } else {
+
+            return response()->json([
+                'error' => 1,
+                'message' => "Can't find User"
+            ]);
+        }
+
+
     }
 
     /**
@@ -101,10 +156,25 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::find($id);
 
-        $user->delete();
+        if ($user) {
+            if ($user->personalInformation)
+                $user->personalInformation->delete();
+            $user->delete();
 
-        return response()->json(['message' => 'User deleted successfully']);
+            return response()->json([
+                'error' => 0,
+                'message' => "User Deleted Successfully!",
+                'data' => $user
+            ]);
+        } else {
+            return response()->json([
+                'error' => 1,
+                'message' => "Can't find User"
+            ]);
+        }
+
+
     }
 }

@@ -19,17 +19,35 @@ class AuthenticationController extends Controller
     public function register(Request $request)
     {
         $request->validate([
+            'user_role_id' => 'required|max:2',
+            'manager_id' => 'nullable|max:2',
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'username' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'contact_no' => 'required|string|max:20',
+            'contact_number' => 'required|string|max:20',
             'password' => 'required|string|min:8',
         ]);
 
+        $creator_id = User::where('id', Auth::user()->id)->where('user_role_id', 1)->orWhere('user_role_id', 2)->first()->id;
+
         $user = User::create([
-            'user_role_id' => 1,
+            'user_role_id' => $request->user_role_id,
+            'manager_id' => $creator_id,
+            'created_by_user_id' => $creator_id,
+            'username' => $request->username,
+            'password' => Hash::make($request->password),
+            'email' => $request->email,
+            // 'contact_number' => $request->contact_number,
+        ]);
+
+        $personalInformation = PersonalInformation::create([
+            'user_id' => $user->id,
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'last_name' => $request->last_name,
+            'contact_number' => $request->contact_number,
         ]);
 
         // Generate access token

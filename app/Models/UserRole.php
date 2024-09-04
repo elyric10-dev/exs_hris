@@ -26,7 +26,7 @@ class UserRole extends Model
         return $this->hasMany(User::class, 'user_role_id');
     }
 
-    public function logs(): MorpMany
+    public function logs(): MorphMany
     {
         return $this->morphMany(Log::class, 'loggable');
     }
